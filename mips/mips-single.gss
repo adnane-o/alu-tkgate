@@ -1,0 +1,32 @@
+load "mips-single.mem"
+load "mips-single.mem2"
+
+zoom 3
+
+probe clk
+probe reset
+
+probe PC
+probe IR
+
+probe Op
+probe Inst
+
+probe SA
+probe SB
+probe WA
+probe WEN
+probe WD
+
+probe ALUOp
+probe A
+probe B
+probe Z
+
+probe zero
+probe nextPC
+
+set reset 1'b1
+clock +2
+set reset 1'b0
+

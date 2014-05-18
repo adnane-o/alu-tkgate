@@ -1,0 +1,115 @@
+// macrocode definition for single-cycle processor
+// no microcode needed
+
+macrocode bank[31:0] imemory.m1;
+
+// note... register names with dollar signs may not be valid in your version
+// of gmac... either change line 58 of src/gmac/luthor.l to include $ in the
+// definition of 'lit2', or change these definitions.
+registers $0=0, $1=1, $2=2, $3=3, $4=4, $5=5, $6=6, $7=7, $8=8, $9=9, $10=10, $11=11, $12=12, $13=13, $14=14, $15=15, $16=16, $17=17, $18=18, $19=19, $20=20, $21=21, $22=22, $23=23, $24=24, $25=25, $26=26, $27=27, $28=28, $29=29, $30=30, $31=31;
+
+///////////
+// operands
+
+// r-format
+// Op    rsA   rsB   rd   unused
+// xxxxxxAA AAABBBBB DDDDD000 00000000
+// 31    25    20    15   10
+operands rform {
+	%1,%2,%3 = { +0[25:21]=%2; +0[20:16]=%3; +0[15:11]=%1; };
+};
+
+// i-format
+// Op    rsA   rd    Immed
+// xxxxxxAA AAADDDDD IIIIIIII IIIIIIII
+// 31    25    20    15
+operands iform {
+	%1,%2,#3 = { +0[25:21]=%2; +0[20:16]=%1; +0[15:0]=#3; };
+};
+
+// memory
+// Op    base  reg   offset
+// xxxxxxBB BBBRRRRR OOOOOOOO OOOOOOOO
+// 31    25    20    15
+operands mem {
+	%1,#2(%3) = { +0[25:21]=%3; +0[20:16]=%1; +0[15:0]=#2; };
+};
+
+// branch
+// Op    rsA   rsB   Immed
+// xxxxxxAA AAABBBBB IIIIIIII IIIIIIII
+// 31    25    20    15
+operands branch {
+	%1,%2,#3 = { +0[25:21]=%1; +0[20:16]=%2; +0[15:0]=#3; };
+};
+
+//////////
+// opcodes
+
+op nop {
+	+0[31:26] = 0;
+	operands {
+		- = { +0[25:0]=0; };
+	};
+};
+
+op add {
+	+0[31:26] = 0;
+	+0[5:0] = 0x20;
+	operands rform;
+};
+
+op addi {
+	+0[31:26] = 0x08;
+	operands iform;
+};
+
+op sub {
+	+0[31:26] = 0;
+	+0[5:0] = 0x22;
+	operands rform;
+};
+
+op slt {
+	+0[31:26] = 0;
+	+0[5:0] = 0x2a;
+	operands rform;
+};
+
+op beq {
+	+0[31:26] = 0x04;
+	operands branch;
+};	
+
+op lw {
+	+0[31:26] = 0x23;
+	operands mem;
+};
+
+op sw {
+	+0[31:26] = 0x2b;
+	operands mem;
+};
+
+/////////////////
+// actual program
+
+begin macrocode @ 0
+
+		lw $7, 0($28)		// acc
+		lw $6, 4($28)		// counter
+		lw $8, 8($28)		// decrement
+top:	
+		sub $6, $6, $8		// counter-=decrement
+		add $7, $7, $7		// acc*=2
+		slt $9, $6, $8		// test of 'slt' inst
+		beq $6, $0, 3		// counter at 0 -> to done
+		nop					// two-cycle branch
+		beq $0, $0, -6		// always -> to top
+		nop					// two-cycle branch
+done:
+		sw $7, 12($28)		// store to memory
+		beq $0, $0, -1		// loop
+		nop
+
+end
